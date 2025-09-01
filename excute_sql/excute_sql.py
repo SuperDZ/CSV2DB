@@ -40,7 +40,7 @@ def execute_sql_fast_no_output(ip, port, username, password, sql_file_path, psql
     ssh.close()
     print(">>> 所有执行完成，连接已关闭。")
 
-def execute_sql_in_persistent_psql_session(ip, port, username, password, sql_file_path, psql_command, repeat=50):
+def execute_sql_in_persistent_psql_session(ip, port, username, password, sql_file_path, psql_command):
     print(f"\n>>> 正在连接 {ip} ...")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -90,21 +90,21 @@ def execute_sql_in_persistent_psql_session(ip, port, username, password, sql_fil
 if __name__ == "__main__":
     servers = [
         {
-            "ip": "192.168.31.20",
-            "port": 22,
-            "username": "postgresql",
-            "password": "md5654852",
-            "sql_file_path": r"C:\Users\MZJ-Y9000P\Desktop\fsdownload\airlines_flights_data_modify_20.sql",
+            "ip": "服务器1的ip",
+            "port": 22,#ssh端口号
+            "username": "服务器登录用户名",
+            "password": "服务器登录用户密码",
+            "sql_file_path": r"在此输入本地sql脚本全路径，具体到文件名",
             "psql_command": "psql -d benchmarksql -p 5432",
             "psql_close_command": "pg_ctl -D /app/pgdata1 -l logfile stop"
         },
         {
-            "ip": "192.168.31.10",
-            "port": 22,
-            "username": "postgresql",
-            "password": "md5654852",
-            "sql_file_path": r"C:\Users\MZJ-Y9000P\Desktop\fsdownload\airlines_flights_data_modify_10.sql",
-            "psql_command": "/app/postgresql-15.10/opt/pgsql/bin/psql -d benchmarksql -p 5432",
+            "ip": "服务器2的ip",
+            "port": 22,#ssh端口号
+            "username": "服务器登录用户名",
+            "password": "服务器登录用户密码",
+            "sql_file_path": r"在此输入本地sql脚本全路径，具体到文件名",
+            "psql_command": "psql -d benchmarksql -p 5432",
             "psql_close_command": "pg_ctl -D /app/pgdata3 -l logfile stop"
         }
     ]
@@ -125,23 +125,4 @@ if __name__ == "__main__":
                 future.result()  # will re‑raise any exceptions
             except Exception as e:
                 print("Task raised an exception:", e)
-    #
-    # #第一台服务器
-    # execute_sql_fast_no_output(
-    #     ip="192.168.31.20",
-    #     port=22,
-    #     username="postgresql",
-    #     password="md5654852",
-    #     sql_file_path=r"C:\Users\MZJ-Y9000P\Desktop\fsdownload\test_sql_before.sql",
-    #     psql_command="psql -d benchmarksql -p 5432"
-    # )
-    #
-    # # # 第二台服务器
-    # execute_sql_fast_no_output(
-    #     ip="192.168.31.10",
-    #     port=22,
-    #     username="postgresql",
-    #     password="md5654852",
-    #     sql_file_path=r"C:\Users\MZJ-Y9000P\Desktop\fsdownload\test-after.sql",
-    #     psql_command="/app/postgresql-15.10/opt/pgsql/bin/psql -d benchmarksql -p 5432"
-    # )
+

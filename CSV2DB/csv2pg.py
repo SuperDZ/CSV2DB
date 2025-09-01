@@ -34,18 +34,18 @@ REMOTE_TMP_DIR = "/tmp/csvs"
 #数据库服务器的配置
 servers = [
     {
-        "ip": "111.111.111.111",
-        "port": 22,
-        "username": "postgresql",
-        "password": "123456",
+        "ip": "服务器1的ip",
+        "port": 22,#ssh端口
+        "username": "服务器登录用户名",
+        "password": "服务器登录密码",
         "psql": "psql",  # 在 PATH 中
         "pg_port": 5432,
     },
     {
-        "ip": "111.111.111.111",
-        "port": 22,
-        "username": "postgresql",
-        "password": "123456",
+        "ip": "服务器2的ip",
+        "port": 22,#ssh端口
+        "username": "服务器登录用户名",
+        "password": "服务器登录密码",
         "psql": "psql",
         "pg_port": 5432,
     }
