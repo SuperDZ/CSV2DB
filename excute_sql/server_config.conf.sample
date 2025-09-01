@@ -1,0 +1,21 @@
+[Server1]
+ip = 服务器1的ip
+port = 22
+username = 服务器1用户名
+password = 服务器1密码
+psql = psql
+pg_port = 5432
+sql_file_path = D:\路径\到\你的\sql脚本1.sql 
+psql_command = psql -d benchmarksql -p 5432  
+psql_close_command = pg_ctl -D /app/pgdata1 -l logfile stop
+
+[Server2]
+ip = 服务器2的ip
+port = 22 
+username = 服务器2用户名
+password = 服务器2密码
+psql = psql
+pg_port = 5432
+sql_file_path = D:\路径\到\你的\sql脚本2.sql 
+psql_command = psql -d benchmarksql -p 5432 
+psql_close_command = pg_ctl -D /app/pgdata3 -l logfile stop 

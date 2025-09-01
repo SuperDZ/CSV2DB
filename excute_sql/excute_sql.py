@@ -2,6 +2,8 @@ import paramiko
 import time
 import sqlparse
 import concurrent.futures
+import configparser
+from pathlib import Path
 
 def execute_sql_fast_no_output(ip, port, username, password, sql_file_path, psql_command, psql_close_command, repeat=20):
     print(f"\n>>> 正在连接 {ip} ...")
@@ -88,26 +90,42 @@ def execute_sql_in_persistent_psql_session(ip, port, username, password, sql_fil
 
 
 if __name__ == "__main__":
-    servers = [
-        {
-            "ip": "服务器1的ip",
-            "port": 22,#ssh端口号
-            "username": "服务器登录用户名",
-            "password": "服务器登录用户密码",
-            "sql_file_path": r"在此输入本地sql脚本全路径，具体到文件名",
-            "psql_command": "psql -d benchmarksql -p 5432",
-            "psql_close_command": "pg_ctl -D /app/pgdata1 -l logfile stop"
-        },
-        {
-            "ip": "服务器2的ip",
-            "port": 22,#ssh端口号
-            "username": "服务器登录用户名",
-            "password": "服务器登录用户密码",
-            "sql_file_path": r"在此输入本地sql脚本全路径，具体到文件名",
-            "psql_command": "psql -d benchmarksql -p 5432",
-            "psql_close_command": "pg_ctl -D /app/pgdata3 -l logfile stop"
-        }
-    ]
+
+    # ——————— 指定全局配置文件 ———————
+    # 该模块将读取server_config.conf配置文件，并获取相关参数
+    config = configparser.ConfigParser()
+    config_path = Path(__file__).parent / 'server_config.conf'  # 获取配置文件的绝对路径
+
+    # ———————配置文件错误检查———————
+    # 检查配置文件是否存在
+    if not config_path.exists():
+        raise FileNotFoundError(f"配置文件不存在: {config_path}")
+    try:
+        config.read(config_path, encoding='utf-8')
+    except Exception as e:
+        raise RuntimeError(f"读取配置文件失败: {str(e)}")
+    # 验证配置文件内容
+    if not config.sections():
+        raise ValueError(f"配置文件内容为空或无法解析: {config_path}")
+
+    # 从配置文件加载服务器列表
+    servers = []
+    for section in config.sections():
+        if section.startswith('Server'):  # 匹配所有以'Server'开头的配置节
+            try:
+                server = {
+                    "ip": config.get(section, 'ip'),
+                    "port": config.getint(section, 'port'),  # 整数类型
+                    "username": config.get(section, 'username'),
+                    "password": config.get(section, 'password'),
+                    "sql_file_path": config.get(section, 'sql_file_path'),  # 新增：SQL文件路径
+                    "psql_command": config.get(section, 'psql_command'),  # 新增：psql命令
+                    "psql_close_command": config.get(section, 'psql_close_command')  # 新增：关闭命令
+                }
+                servers.append(server)
+            except configparser.NoOptionError as e:
+                print(f"配置文件错误：{section} 缺少必要配置项: {e}")
+                continue
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         # Submit both tasks at once

@@ -1,0 +1,1 @@
+使用该脚本前，将server_config.conf.sample文件的.sample后缀删除，并修改其中对应的参数，即可运行
