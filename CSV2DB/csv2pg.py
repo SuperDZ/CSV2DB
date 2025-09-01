@@ -1,8 +1,9 @@
+import re
 import paramiko
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
-import re
+import configparser
 
 #2025.8.30 v5.0版本(目前是pg版本)
 #支持将指定目录下的.csv数据集批量导入到pg数据库中，自动检测数据库是否存在，不存在则直接创建，文件夹需要小写命名
@@ -13,9 +14,45 @@ import re
 #code by MZJ
 
 #将csv格式的文件转换成sql导入指定ip的服务器上的pg库中
-#
+
+
+# ——————— 指定全局配置文件 ———————
+# 该模块将读取server_config.conf配置文件，并获取相关参数
+config = configparser.ConfigParser()
+config_path = Path(__file__).parent / 'server_config.conf'  # 获取配置文件的绝对路径
+
+# ———————配置文件错误检查———————
+# 检查配置文件是否存在
+if not config_path.exists():
+    raise FileNotFoundError(f"配置文件不存在: {config_path}")
+try:
+    config.read(config_path, encoding='utf-8')
+except Exception as e:
+    raise RuntimeError(f"读取配置文件失败: {str(e)}")
+# 验证配置文件内容
+if not config.sections():
+    raise ValueError(f"配置文件内容为空或无法解析: {config_path}")
+
 # ——————— 全局配置 ———————
-LOCAL_CSV_DIR = Path(r"在这里入本地csv文件夹目录，需要替换为C:XXX\XXXX\XXXX")
+# 数据集所在目录
+LOCAL_CSV_DIR = Path(config.get('General', 'local_csv_dir'))
+
+#服务器上的临时目录地址
+REMOTE_TMP_DIR = "/tmp/csvs"
+
+#数据库服务器的配置
+servers = []
+for section in config.sections():
+    if section.startswith('Server'):  # 所有服务器配置节以'Server'开头
+        server = {
+            "ip": config.get(section, 'ip'),
+            "port": config.getint(section, 'port'),
+            "username": config.get(section, 'username'),
+            "password": config.get(section, 'password'),
+            "psql": config.get(section, 'psql'),
+            "pg_port": config.getint(section, 'pg_port'),
+        }
+        servers.append(server)
 
 # 数据库名格式化处理
 def sanitize_db_name(name: str) -> str:
@@ -28,28 +65,6 @@ def sanitize_db_name(name: str) -> str:
 
 db_name = sanitize_db_name(LOCAL_CSV_DIR.name)
 
-#服务器上的临时目录地址
-REMOTE_TMP_DIR = "/tmp/csvs"
-
-#数据库服务器的配置
-servers = [
-    {
-        "ip": "服务器1的ip",
-        "port": 22,#ssh端口
-        "username": "服务器登录用户名",
-        "password": "服务器登录密码",
-        "psql": "psql",  # 在 PATH 中
-        "pg_port": 5432,
-    },
-    {
-        "ip": "服务器2的ip",
-        "port": 22,#ssh端口
-        "username": "服务器登录用户名",
-        "password": "服务器登录密码",
-        "psql": "psql",
-        "pg_port": 5432,
-    }
-]
 
 # ——————— 数据类型映射函数 ———————
 def dtype_to_sql(dtype) -> str:

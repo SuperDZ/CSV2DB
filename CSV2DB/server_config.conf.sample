@@ -1,0 +1,18 @@
+[General]
+local_csv_dir = C:\path\to\your\csv\files
+
+[Server1]
+ip = 服务器1的ip
+port = 22
+username = 服务器登录用户名
+password = 服务器登录密码
+psql = psql
+pg_port = 5432
+
+[Server2]
+ip = 服务器2的ip
+port = 22
+username = 服务器登录用户名
+password = 服务器登录密码
+psql = psql
+pg_port = 5432
