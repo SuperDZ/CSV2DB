@@ -65,6 +65,13 @@ def sanitize_db_name(name: str) -> str:
 
 db_name = sanitize_db_name(LOCAL_CSV_DIR.name)
 
+# ——————— 列名清理函数 ———————
+def sanitize_column_name(name: str) -> str:
+    # 转义双引号（PostgreSQL中用两个双引号表示转义）
+    name = name.replace('"', '""')
+    # 移除控制字符（非打印ASCII字符）
+    name = re.sub(r'[\x00-\x1F\x7F]', '', name)
+    return name.strip() or "column"
 
 # ——————— 数据类型映射函数 ———————
 def dtype_to_sql(dtype) -> str:
@@ -92,12 +99,12 @@ def csv_create_table_sql(csv_path: Path) -> str:
     # 只读前 1000 行以加速类型推断，避免 low_memory 警告
     df = pd.read_csv(csv_path, nrows=1000, low_memory=False)
     cols = [
-        f'"{col}" {dtype_to_sql(df[col].dtype)}'
+        f'"{sanitize_column_name(col)}" {dtype_to_sql(df[col].dtype)}'
         for col in df.columns
     ]
     cols_sql = ",\n  ".join(cols)
     return (
-        f'CREATE TABLE IF NOT EXISTS "{table}" (\n'
+        f'CREATE TABLE IF NOT EXISTS {table}(\n'
         f'  {cols_sql}\n'
         f');'
     )
@@ -178,7 +185,7 @@ def deploy_and_import(server: dict):
         #-------------------------------
         create_table_cmd = (
             f"{server['psql']} -p {server['pg_port']} -d {db_name} -c "
-            f"\"{create_sql}\""
+            f"'{create_sql}'"
         )
         code, out, err = run_ssh_cmd(ssh, create_table_cmd)
         if code != 0:
