@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import configparser
 
-#2025.8.30 v5.0版本(目前是pg版本)
+#2025.10.08 v5.1版本(目前是pg版本)
 #支持将指定目录下的.csv数据集批量导入到pg数据库中，自动检测数据库是否存在，不存在则直接创建，文件夹需要小写命名
 #不同数据集需要修改的地方：
 #1. 数据集的路径
@@ -44,6 +44,15 @@ REMOTE_TMP_DIR = "/tmp/csvs"
 servers = []
 for section in config.sections():
     if section.startswith('Server'):  # 所有服务器配置节以'Server'开头
+        # 前置检查dbms类型，非postgresql直接跳过
+        try:
+            dbms = config.get(section, 'dbms', fallback='').lower()
+            if dbms != 'postgresql':
+                print(f"[INFO] 跳过非PostgreSQL服务器配置: {section} (dbms={dbms})")
+                continue
+        except Exception as e:
+            print(f"[WARN] 服务器配置节 [{section}] 缺少dbms参数，已跳过")
+            continue
         server = {
             "ip": config.get(section, 'ip'),
             "port": config.getint(section, 'port'),
@@ -51,7 +60,15 @@ for section in config.sections():
             "password": config.get(section, 'password'),
             "psql": config.get(section, 'psql'),
             "pg_port": config.getint(section, 'pg_port'),
+            "dbms": config.get(section, 'dbms').lower()
         }
+        # 新增：验证dbms参数合法性
+        supported_dbms = ["postgresql"]  # 当前支持的数据库类型
+        if server["dbms"] not in supported_dbms:
+            raise ValueError(
+                f"服务器配置节 [{section}] 中的dbms参数 '{server['dbms']}' 不受支持。"
+                f"当前支持: {supported_dbms}"
+            )
         servers.append(server)
 
 # 数据库名格式化处理
